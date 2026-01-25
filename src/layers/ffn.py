@@ -43,10 +43,15 @@ class DenseMLP(FFN):
             return 0
 
         hidden_size = self.config.hidden_size
+        tp_size = self.serverArgs.tp_size if self.serverArgs.tp_size > 0 else 1
         intermediate_size = cfg.intermediate_size
 
-        # Dense MLP: 3 matrices (gate_proj, up_proj, down_proj)
-        w = 3 * hidden_size * intermediate_size
+        # Dense MLP TP 切分策略：
+        # gate_proj, up_proj 按列切分 (intermediate_size / tp_size)
+        # down_proj 按行切分 (输入维度 intermediate_size / tp_size)
+        w_gate_up = 2 * hidden_size * (intermediate_size // tp_size)
+        w_down = (intermediate_size // tp_size) * hidden_size
+        w = w_gate_up + w_down
 
         if self.serverArgs.use_fp8_gemm:
             return w
@@ -71,8 +76,39 @@ class MoE(FFN):
             return 0
 
         hidden_size = self.config.hidden_size
+        ep_tp_size = (
+            self.serverArgs.world_size // self.serverArgs.ep_size
+            if self.serverArgs.ep_size > 0
+            else 1
+        )
         intermediate_size = cfg.intermediate_size
-        w = 3 * hidden_size * intermediate_size
+
+        # MoE 专家内部 TP 切分（如果专家很大，TP 会切分专家权重）
+        w_gate_up = 2 * hidden_size * (intermediate_size // ep_tp_size)
+        w_down = (intermediate_size // ep_tp_size) * hidden_size
+        w = w_gate_up + w_down
+
+        if self.serverArgs.use_fp8_gemm:
+            return w
+        return 2 * w
+
+    def single_shared_mlp_size(self):
+        cfg = self.config.moe_config
+        if not cfg:
+            return 0
+
+        hidden_size = self.config.hidden_size
+        tp_size = self.serverArgs.tp_size if self.serverArgs.tp_size > 0 else 1
+        # if deepseek, put shared expert tp_size = 1
+        tp_size = (
+            1 if self.config.model_type in ["deepseek_v3", "deepseek_v32"] else tp_size
+        )
+        intermediate_size = cfg.intermediate_size
+
+        # Shared MLP TP 切分（有些实现不切分共享专家，这里暂按 TP 切分统计）
+        w_gate_up = 2 * hidden_size * (intermediate_size // tp_size)
+        w_down = (intermediate_size // tp_size) * hidden_size
+        w = w_gate_up + w_down
 
         if self.serverArgs.use_fp8_gemm:
             return w
@@ -83,11 +119,13 @@ class MoE(FFN):
         if not cfg:
             return 0
         # ep distributed, router expert will be divided by ep size, shared expert will copy on every gpu
-        num_experts = (cfg.num_routed_experts / self.ep_size) + self.shared_experts
+        # num_experts = (cfg.num_routed_experts / self.ep_size) + self.shared_experts
         # print(
         #     f"num_experts: {num_experts}， single expert weights size: {self.single_expert_weights_size()/(1024**2)}MB"
         # )
-        return num_experts * self.single_expert_weights_size()
+        return (
+            cfg.num_routed_experts / self.ep_size
+        ) * self.single_expert_weights_size() + self.shared_experts * self.single_shared_mlp_size()
 
 
 class QwenNextFFN(MoE):
@@ -125,7 +163,7 @@ class DeepSeekV3FFN(FFN):
         # print(
         #     f"DeepSeek V3 layer {self.layer_idx} first_k_dense_replace: {self.config.first_k_dense_replace}"
         # )
-        print(f"moe config: {self.config.moe_config}")
+        # print(f"moe config: {self.config.moe_config}")
         if (
             self.config.first_k_dense_replace > 0
             and self.layer_idx < self.config.first_k_dense_replace
