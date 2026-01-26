@@ -48,11 +48,8 @@ class Attn:
         raise NotImplementedError
     
     @abstractmethod
-    def per_token_kv_cache_size(self):
-        raise NotImplementedError
-    
-    @abstractmethod
-    def state_kv_cache_size(self):
+    def kv_cache_factors(self) -> tuple[int, int]:
+        """返回 (static_bytes, per_token_bytes)"""
         raise NotImplementedError
 
 
@@ -88,30 +85,27 @@ class MHAAttn(Attn):
             return total
         return 2 * total
 
-    def per_token_kv_cache_size(self):
+    def kv_cache_factors(self) -> tuple[int, int]:
         from src.config.model_config import HybridAttnConfig, MHAConfig
-
+    
         tp_size = self.serverArgs.tp_size if self.serverArgs.tp_size > 0 else 1
         cfg = self.config.attn_config
-        
+            
         if isinstance(cfg, HybridAttnConfig):
             cfg = cfg.full_attn_config
-
+    
         if not isinstance(cfg, MHAConfig):
-            return 0
-
+            return 0, 0
+                
         # MHA KV Cache: 每个 token 存储 2 * num_kv_heads * head_dim
-        # 返回单层每个 token 占用的字节数
         per_token_size = (
             2 * (cfg.num_key_value_heads // tp_size) * cfg.head_dim
         )
         if not self.serverArgs.use_fp8_kv:
             per_token_size *= 2
-        return per_token_size
-
-    def state_kv_cache_size(self):
-        return 0
-
+                
+        return 0, per_token_size
+    
 
 class MLAAttn(Attn):
     def __init__(self, serverArgs: ServerArgs, config: ModelConfig):
@@ -156,7 +150,7 @@ class MLAAttn(Attn):
         return 2 * total
 
 
-    def per_token_kv_cache_size(self):
+    def kv_cache_factors(self) -> tuple[int, int]:
         from src.config.model_config import HybridAttnConfig, MLAConfig
 
         cfg = self.config.attn_config
@@ -164,19 +158,15 @@ class MLAAttn(Attn):
             cfg = cfg.full_attn_config
 
         if not isinstance(cfg, MLAConfig):
-            return 0
+            return 0, 0
 
-        # MLA KV Cache 存储内容 (单层每个 token):
-        # 1. 压缩后的 KV latent (kv_lora_rank)
-        # 2. 共享的 RoPE Key (qk_rope_head_dim)
+        # MLA KV Cache (单层每个 token): kv_lora_rank + qk_rope_head_dim
         per_token_size = cfg.kv_lora_rank + cfg.qk_rope_head_dim
         
         if not self.serverArgs.use_fp8_kv:
             per_token_size *= 2
-        return per_token_size
-
-    def state_kv_cache_size(self):
-        return 0
+            
+        return 0, per_token_size
 
 
 class LinearAttn(Attn):
@@ -221,10 +211,7 @@ class LinearAttn(Attn):
             return s + wconv
         return 2 * s + wconv
 
-    def per_token_kv_cache_size(self):
-        return 0
-
-    def state_kv_cache_size(self):
+    def kv_cache_factors(self) -> tuple[int, int]:
         from src.config.model_config import HybridAttnConfig, LinearAttnConfig
 
         cfg = self.config.attn_config
@@ -232,28 +219,22 @@ class LinearAttn(Attn):
             cfg = cfg.linear_attn_config
 
         if not isinstance(cfg, LinearAttnConfig):
-            return 0
+            return 0, 0
 
         tp_size = self.serverArgs.tp_size if self.serverArgs.tp_size > 0 else 1
 
-        # 线性注意力状态 (固定大小，不随长度增长)
-        # 按 Head 维度切分到各个 TP rank
+        # 1. Conv State
         num_v_heads = cfg.num_value_heads // tp_size
         num_k_heads = cfg.num_key_heads // tp_size
-        
-        # 1. Conv State: (v_dim + 2 * k_dim) * (kernel - 1) * 2 (bf16)
         conv_state_size = (
             (num_v_heads * cfg.value_head_dim + 2 * num_k_heads * cfg.key_head_dim)
             * (cfg.conv_kernel_dim - 1)
             * 2
         )
         
-        # 2. SSM/Recurrent State: num_v_heads * k_dim * v_dim * 4 (fp32)
+        # 2. SSM State (FP32)
         ssm_state_size = (
-            num_v_heads
-            * cfg.key_head_dim
-            * cfg.value_head_dim
-            * 4
+            num_v_heads * cfg.key_head_dim * cfg.value_head_dim * 4
         )
 
-        return conv_state_size + ssm_state_size
+        return conv_state_size + ssm_state_size, 0

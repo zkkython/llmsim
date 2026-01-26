@@ -37,17 +37,8 @@ class DecoderBlock:
         return 0
 
     def kvcache_bytes(self, context_len: int):
-        
-        # 如果是 MHA 或 MLA，大小随 context_len 线性增长
-        if self.attn_type() in ["MHA", "MLA"]:
-            # 获取单层基础大小
-            size = self.attn.per_token_kv_cache_size()
-            return size * context_len
-        elif self.attn_type() == "LinearAttn":
-            # 如果是 LinearAttn，返回的是固定的 States 大小
-            return self.attn.state_kv_cache_size()
-        else:
-            raise NotImplementedError
+        static_bytes, per_token_bytes = self.attn.kv_cache_factors()
+        return static_bytes + per_token_bytes * context_len
 
     def prefill_cost(self):
         return 0
