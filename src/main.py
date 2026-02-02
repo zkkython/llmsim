@@ -2,7 +2,8 @@ import argparse
 import sys
 
 from src.hardware.hardware_config import HardwareConfig, DEFAULT_HARDWARE
-from src.arch.model_arch import ModelConfig, ScheduleConfig, ForwardMode, create_model_arch
+from src.arch.config import ModelConfig, ScheduleConfig, ForwardMode
+from src.arch.models_arch.model_arch import create_model_arch
 from src.arch.perf_calculator import PerformanceCalculator
 
 def parse_args():

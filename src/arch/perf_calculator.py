@@ -1,13 +1,12 @@
 """
 性能计算引擎 - 统一的性能计算和分析模块
 """
-from curses import meta
 from dataclasses import dataclass, field
 from typing import List
 
 from src.hardware.hardware_config import HardwareConfig
-from src.arch.model_arch import BaseModelArch
-from src.op.operator_base import BaseOperator
+from src.arch.models_arch.model_arch import BaseModelArch
+from src.arch.op.operator_base import BaseOperator
 
 @dataclass
 class OperatorPerformance:
@@ -126,7 +125,7 @@ class ModelPerformance:
         return bottleneck_op
     
     def get_percentage(self, time_us: float) -> float:
-        """获取所占百分比（基于所有算子full_time之和，与旧版本一致）"""
+        """获取所占百分比（基于所有算子full_time之和）"""
         sum_full_time = getattr(self, '_sum_full_time', self.total_time)
         if sum_full_time == 0:
             return 0.0
@@ -233,10 +232,10 @@ class PerformanceCalculator:
         io_volume = operator.get_io_volume()
         transfer_bytes = io_volume.get('transfer', io_volume.get('load', 0))
                 
-        # 按 old_main.py 一致的公式计算：
+       
         # data.transfer = m * n * batch * dtype / nb / 1000.0
         # 这里 transfer_bytes = m * n * batch * dtype（字节数），nb = GB/s
-        # 单位保持和老版本一致：返回 "微秒/层"
+        # 返回 "微秒/层"
         transfer_time_us = transfer_bytes / bandwidth_gb_s / 1000.0
                 
         return transfer_time_us
