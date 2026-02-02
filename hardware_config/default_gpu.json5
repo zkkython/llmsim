@@ -1,0 +1,39 @@
+{
+  // 设备类型: gpu, xpu, accelerator
+  device_type: "gpu",
+
+  // 硬件名称
+  name: "Default GPU",
+
+  // 显存配置
+  memory: {
+    // HBM 显存大小 (单位: GB)
+    hbm_size_gb: 96,
+    // Cache 行大小 (单位: Bytes)
+    cache_line_size: 128,
+  },
+
+  // 带宽配置 (单位: GB/s)
+  bandwidth: {
+    // HBM 带宽 (T/s)
+    hbm_bandwidth_gb_s: 1.8,
+    // DMA 带宽 - 扩展(prefill)模式
+    dma_bandwidth_gb_s: 85.0,
+    // DMA 带宽 - 解码(decode)模式
+    dma_bandwidth_decode_gb_s: 22.64,
+    // 网络带宽 - 扩展模式
+    network_bandwidth_gb_s: 85.0,
+    // 网络带宽 - 解码模式
+    network_bandwidth_decode_gb_s: 22.64,
+  },
+
+  // 计算性能配置 (单位: GFLOPS)
+  compute: {
+    // INT8 MAC 性能
+    mac_int8_gflops: 500.0,
+    // FP32 MAC 性能
+    mac_fp32_gflops: 125.0,
+    // BF16/FP16 MAC 性能
+    mac_bf16_gflops: 250.0,
+  },
+}

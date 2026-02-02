@@ -10,4 +10,4 @@ python3 src/main.py --model_path hf_config/deepseek_671b_r1_config.json \
     --ep_size 16 \
     --enable_deepep \
     --enable_moe_dense_fully_dp \
-    --hardware default
+    --hardware klx_p800

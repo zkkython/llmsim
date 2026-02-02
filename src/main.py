@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from src.hardware.hardware_config import HardwareConfig, DEFAULT_HARDWARE
+from src.hardware.hardware_config import HardwareConfig, DEFAULT_HARDWARE, get_hardware_config
 from src.arch.config import ModelConfig, ScheduleConfig, ForwardMode
 from src.arch.models_arch.model_arch import create_model_arch
 from src.arch.perf_calculator import PerformanceCalculator
@@ -69,9 +69,15 @@ def parse_args():
     parser.add_argument(
         "--hardware",
         type=str,
-        choices=["default", "high_perf"],
+        choices=["default", "h20", "h800", "gb200", "klx_p800", "custom"],
         default="default",
-        help="硬件配置预设",
+        help="硬件配置预设 (default, h20, h800, gb200, klx_p800, custom)",
+    )
+    parser.add_argument(
+        "--hardware_config",
+        type=str,
+        default=None,
+        help="自定义硬件配置文件路径 (当 --hardware=custom 时使用)",
     )
 
     args = parser.parse_args()
@@ -120,9 +126,17 @@ def main() -> None:
     )
     
     # 选择硬件配置
-    if args.hardware == "high_perf":
-        hardware_config = HardwareConfig.create_high_performance_gpu()
+    if args.hardware == "custom":
+        # 自定义配置文件
+        if args.hardware_config is None:
+            print("错误: 使用 --hardware=custom 时必须指定 --hardware_config", file=sys.stderr)
+            sys.exit(1)
+        hardware_config = HardwareConfig.from_json(args.hardware_config)
+    elif args.hardware in ["h20", "h800", "gb200", "klx_p800"]:
+        # 从预定义配置加载
+        hardware_config = get_hardware_config(args.hardware)
     else:
+        # 默认配置
         hardware_config = DEFAULT_HARDWARE
     
     # 创建模型架构

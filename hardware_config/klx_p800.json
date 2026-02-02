@@ -1,0 +1,20 @@
+{
+  "device_type": "xpu",
+  "name": "KLX_P800",
+  "memory": {
+    "hbm_size_gb": 96,
+    "cache_line_size": 128
+  },
+  "bandwidth": {
+    "hbm_bandwidth_gb_s": 1.8,
+    "dma_bandwidth_gb_s": 85.0,
+    "dma_bandwidth_decode_gb_s": 22.64,
+    "network_bandwidth_gb_s": 85.0,
+    "network_bandwidth_decode_gb_s": 22.64
+  },
+  "compute": {
+    "mac_int8_gflops": 500.0,
+    "mac_fp32_gflops": 125.0,
+    "mac_bf16_gflops": 250.0
+  }
+}
