@@ -27,7 +27,7 @@
     network_bandwidth_decode_gb_s: 22.64,
   },
 
-  // 计算性能配置 (单位: GFLOPS)
+  // 计算性能配置 (单位: TFLOPS)
   compute: {
     // INT8 MAC 性能 (FP8)
     mac_int8_gflops: 296.0,
