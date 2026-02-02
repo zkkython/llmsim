@@ -79,6 +79,19 @@ def parse_args():
         default=None,
         help="自定义硬件配置文件路径 (当 --hardware=custom 时使用)",
     )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        choices=["console", "excel"],
+        default="console",
+        help="输出格式 (console, excel)",
+    )
+    parser.add_argument(
+        "--output_file",
+        type=str,
+        default=None,
+        help="输出文件路径 (当 --output_format=excel 时推荐使用)",
+    )
 
     args = parser.parse_args()
     return args
@@ -162,7 +175,11 @@ def main() -> None:
         sys.exit(1)
     
     # 打印性能报告
-    calculator.print_performance_report(model_perf)
+    calculator.print_performance_report(
+        model_perf,
+        output_format=args.output_format,
+        output_path=args.output_file
+    )
 
 
 if __name__ == "__main__":

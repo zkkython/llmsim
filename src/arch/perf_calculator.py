@@ -7,6 +7,7 @@ from typing import List
 from src.hardware.hardware_config import HardwareConfig
 from src.arch.models_arch.model_arch import BaseModelArch
 from src.arch.op.operator_base import BaseOperator
+from src.arch.op.operator_base import OperatorMetadata
 
 @dataclass
 class OperatorPerformance:
@@ -24,12 +25,16 @@ class OperatorPerformance:
     flops: float = 0.0
     memory_volume: float = 0.0
     io_volume: float = 0.0
+
+    # 记录这个算子的基本信息，用于可视化
+    metadata: OperatorMetadata = field(default_factory=OperatorMetadata)
     
     def __str__(self) -> str:
         return (
             f"OperatorPerformance(name={self.name}, "
             f"compute={self.compute_time:.3f}us, "
             f"memory={self.memory_time:.3f}us, "
+            f"transfer={self.transfer_time:.3f}us, "
             f"total={self.total_time:.3f}us)"
         )
 
@@ -313,6 +318,7 @@ class PerformanceCalculator:
             flops=operator.get_compute_complexity() * layer_count,
             memory_volume=operator.get_memory_requirement().get('weight', 0),
             io_volume=operator.get_io_volume().get('load', 0) + operator.get_io_volume().get('store', 0),
+            metadata=metadata,
         )
         
         return op_perf
@@ -361,56 +367,20 @@ class PerformanceCalculator:
         
         return model_perf
     
-    def print_performance_report(self, model_perf: ModelPerformance) -> None:
+    def print_performance_report(self, model_perf: ModelPerformance, output_format: str = 'console', output_path: str = None) -> None:
         """
         打印性能报告
         
         Args:
             model_perf: 模型性能指标
+            output_format: 输出格式 ('console' 或 'excel')
+            output_path: 输出文件路径（可选，仅对某些格式有效）
         """
-        print("\n" + "=" * 120)
-        print(f"性能分析报告: {model_perf.model_name} ({model_perf.forward_mode})")
-        print("=" * 120)
+        from src.arch.report_formatter import create_formatter
         
-        # 表头
-        headers = ["算子名称", "算子类型", "计算时间(us/layer)", "内存时间(us/layer)", "传输时间(us/layer)", "总时间(ms)", "百分比(%)"]
-        print(f"{headers[0]:<20}{headers[1]:<15}{headers[2]:<15}{headers[3]:<15}{headers[4]:<15}{headers[5]:<15}{headers[6]:<15}")
-        print("-" * 120)
+        formatter = create_formatter(output_format)
         
-        # 打印各层性能
-        for layer_perf in model_perf.layer_performances:
-            for op_perf in layer_perf.operators:
-                # op_perf.total_time 是毫秒，_sum_full_time 是微秒
-                # 需要将 total_time 转换为微秒来计算百分比
-                time_us = op_perf.total_time * 1000.0
-                percentage = model_perf.get_percentage(time_us)
-                print(
-                    f"{op_perf.name:<24}{op_perf.op_type:<19}{op_perf.compute_time:<19.3f}"
-                    f"{op_perf.memory_time:<19.3f}{op_perf.transfer_time:<19.3f}"
-                    f"{op_perf.total_time:<19.3f}{percentage:<19.2f}"
-                )
-        
-        print("-" * 120)
-        
-        # 汇总统计
-        total_compute_ms = model_perf.total_compute_time / 1000.0
-        total_memory_ms = model_perf.total_memory_time / 1000.0
-        total_transfer_ms = model_perf.total_transfer_time / 1000.0
-        total_ms = model_perf.total_time / 1000.0
-        
-        print(f"\n总结统计/单层:")
-        print(f"  计算时间: {total_compute_ms:.3f} ms")
-        print(f"  内存时间: {total_memory_ms:.3f} ms")
-        print(f"  传输时间: {total_transfer_ms:.3f} ms")
-        print(f"  总耗时:   {total_ms:.3f} ms")
-        
-        # 性能瓶颈
-        bottleneck = model_perf.get_bottleneck_op()
-        if bottleneck:
-            layer_name, op_name, op_perf = bottleneck
-            print(f"\n性能瓶颈:")
-            print(f"  层: {layer_name}")
-            print(f"  算子: {op_name}")
-            print(f"  总耗时: {op_perf.total_time:.3f} ms")
-        
-        print("=" * 100 + "\n")
+        if output_path:
+            formatter.save(model_perf, output_path)
+        else:
+            formatter.save(model_perf)
