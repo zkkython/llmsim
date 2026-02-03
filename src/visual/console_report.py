@@ -1,6 +1,5 @@
 from src.arch.perf_calculator import ModelPerformance
 from src.visual.report_base import ReportFormatter
-from src.arch.config import ForwardMode
 
 class ConsoleReportFormatter(ReportFormatter):
     """控制台输出格式化器 - 美化的表格格式"""
@@ -196,7 +195,7 @@ class ConsoleReportFormatter(ReportFormatter):
         # TTFT 与 Throughput
         ttft = model_perf.get_ttft_or_tpot()
         print("├" + "─" * (total_width - 2) + "┤")
-        ttft_text = f"TTFT: (耗时: {ttft:.3f} ms)" if model_perf.forward_mode == ForwardMode.EXTEND else f"TPOT: (耗时: {ttft:.3f} ms)"
+        ttft_text = f"TTFT: (耗时: {ttft:.3f} ms)" if model_perf.forward_mode == "EXTEND" else f"TPOT: (耗时: {ttft:.3f} ms)"
         padding = total_width - self._display_width(ttft_text) - 4
         print(f"│ {ttft_text}" + " " * max(padding, 1) + " │")
 

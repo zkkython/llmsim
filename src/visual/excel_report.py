@@ -158,7 +158,7 @@ class ExcelReportFormatter(ReportFormatter):
         ttft = model_perf.get_ttft_or_tpot()
         throughput = model_perf.get_throughput()
         other_data = [
-            ('TTFT (ms)', ttft) if model_perf.forward_mode == ForwardMode.EXTEND else ('TPOT (ms)', ttft),
+            ('TTFT (ms)', ttft) if model_perf.forward_mode == "EXTEND" else ('TPOT (ms)', ttft),
             ('吞吐量TPS', throughput),
         ]
         for idx, (label, value) in enumerate(other_data):

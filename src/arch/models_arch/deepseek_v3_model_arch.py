@@ -169,6 +169,31 @@ class DeepSeekV3Arch(BaseModelArch):
         )
         self._add_operator(create_operator("matmul", o_proj_metadata))
 
+        # 2. TP AllReduce (如果 TP > 1)
+        if sc.tp_size > 1:
+            # 根据模式选择带宽
+            if sc.mode == ForwardMode.EXTEND:
+                reduce_bandwidth = 85.0  # GB/s
+            else:  # DECODE
+                reduce_bandwidth = 22.64  # GB/s
+
+            all_reduce_metadata = OperatorMetadata(
+                name="attn_all_reduce",
+                op_type="transfer",
+                io_config=OperatorIO(
+                    input_shape=Tensor(seq_len, mc.hidden_size),
+                    output_shape=Tensor(seq_len, mc.hidden_size),
+                    weight_shape=Tensor(0, 0),
+                    input_dtype=DataType.BF16,
+                    output_dtype=DataType.BF16,
+                ),
+                batch_size=1,
+                num_layers=num_layers,
+            )
+            all_reduce_op = create_operator("transfer", all_reduce_metadata)
+            all_reduce_op._bandwidth_gb_s = reduce_bandwidth
+            self._add_transfer_operator(all_reduce_op)
+
         # 3. 注意力核心
         attn_operators = []
         qk_nope_metadata = OperatorMetadata(
@@ -276,6 +301,31 @@ class DeepSeekV3Arch(BaseModelArch):
             num_layers=num_dense_layers,
         )
         self._add_operator(create_operator("matmul", down_metadata))
+
+        # 3. TP AllReduce (如果 TP > 1 且不是全 DP 模式)
+        if sc.tp_size > 1 and not sc.enable_moe_dense_fully_dp:
+            # 根据模式选择带宽
+            if sc.mode == ForwardMode.EXTEND:
+                reduce_bandwidth = 85.0  # GB/s
+            else:  # DECODE
+                reduce_bandwidth = 22.64  # GB/s
+
+            all_reduce_metadata = OperatorMetadata(
+                name="dense_all_reduce",
+                op_type="transfer",
+                io_config=OperatorIO(
+                    input_shape=Tensor(seq_len, mc.hidden_size),
+                    output_shape=Tensor(seq_len, mc.hidden_size),
+                    weight_shape=Tensor(0, 0),
+                    input_dtype=DataType.BF16,
+                    output_dtype=DataType.BF16,
+                ),
+                batch_size=1,
+                num_layers=num_dense_layers,
+            )
+            all_reduce_op = create_operator("transfer", all_reduce_metadata)
+            all_reduce_op._bandwidth_gb_s = reduce_bandwidth
+            self._add_transfer_operator(all_reduce_op)
 
     def _build_moe_operators(self, num_moe_layers: int) -> None:
         # ====================

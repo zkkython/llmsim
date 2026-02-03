@@ -170,8 +170,7 @@ class PerformanceCalculator:
             total_time=total_time / 1000.0,  # 转换为毫秒
             flops=operator.get_compute_complexity() * layer_count,
             memory_volume=operator.get_memory_requirement().get("weight", 0),
-            io_volume=operator.get_io_volume().get("load", 0)
-            + operator.get_io_volume().get("store", 0),
+            io_volume=operator.get_io_volume().get("load", 0) + operator.get_io_volume().get("store", 0),
             metadata=metadata,
         )
 
