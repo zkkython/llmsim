@@ -462,7 +462,7 @@ class ExcelReportFormatter(ReportFormatter):
         throughput = model_perf.get_throughput()
         other_data = [
             ('TTFT (ms)', ttft),
-            ('吐吐量TPS', throughput),
+            ('吞吐量TPS', throughput),
         ]
         for idx, (label, value) in enumerate(other_data):
             ttft_throughput_row = stats_row + len(stats_data) + 2 + (2 if bottleneck else 0)
