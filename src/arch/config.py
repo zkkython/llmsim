@@ -114,6 +114,9 @@ class ScheduleConfig:
     max_seqlen: int = 4096
     mode: ForwardMode = ForwardMode.EXTEND
 
+    num_nodes: int = 2
+    world_size: int = 16
+
     # 并行化配置
     tp_size: int = 1  # Tensor Parallel
     dp_size: int = 16  # Data Parallel
