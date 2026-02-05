@@ -1,3 +1,0 @@
-pytest
-json5
-openpyxl
