@@ -5,15 +5,15 @@ from src.arch.op.operator_base import BaseOperator, OperatorMetadata
 
 
 class MatmulOperator(BaseOperator):
-    """矩阵乘法算子"""
+    """Matrix multiplication operator"""
 
     def __init__(self, metadata: OperatorMetadata):
         super().__init__(metadata)
 
     def get_compute_complexity(self) -> float:
-        """计算矩阵乘法的 FLOPs"""
+        """Calculate FLOPs for matrix multiplication"""
         io = self.metadata.io_config
-        # FLOPs = 2 * m * n * k (因为矩阵乘法需要m*n*k次乘法和加法)
+        # FLOPs = 2 * m * n * k (matrix multiplication requires m*n*k multiplications and additions)
         m = io.input_shape.m
         k = io.input_shape.n
         n = io.output_shape.n
@@ -22,8 +22,8 @@ class MatmulOperator(BaseOperator):
         return 2.0 * m * k * n * batch
 
     def get_memory_requirement(self) -> Dict[str, int]:
-        """获取矩阵乘法的内存需求"""
-        """理论上所有矩阵乘法的显存占用都是下面的逻辑"""
+        """Get memory requirements for matrix multiplication"""
+        """Theoretically, all matrix multiplication memory usage follows the logic below"""
         io = self.metadata.io_config
         batch = self.metadata.batch_size
 

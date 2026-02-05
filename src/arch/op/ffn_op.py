@@ -5,13 +5,13 @@ from src.arch.op.operator_base import BaseOperator, OperatorMetadata
 
 
 class FFNOperator(BaseOperator):
-    """前馈网络算子"""
+    """Feed-Forward Network operator"""
 
     def __init__(self, metadata: OperatorMetadata):
         super().__init__(metadata)
 
     def get_compute_complexity(self) -> float:
-        """计算 FFN 的 FLOPs"""
+        """Calculate FLOPs for FFN"""
         io = self.metadata.io_config
         m = io.input_shape.m
         k = io.input_shape.n
@@ -19,11 +19,11 @@ class FFNOperator(BaseOperator):
         batch = self.metadata.batch_size
 
         # FFN: input * w1 + w1_out * w2
-        # 通常 w1 是 gate+up projection，计算两次矩阵乘法
+        # Usually w1 is gate+up projection, computing two matrix multiplications
         return 2.0 * 2.0 * m * k * n * batch
 
     def get_memory_requirement(self) -> Dict[str, int]:
-        """获取 FFN 的内存需求"""
+        """Get memory requirements for FFN"""
         io = self.metadata.io_config
         batch = self.metadata.batch_size
 

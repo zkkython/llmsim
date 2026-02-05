@@ -5,17 +5,17 @@ from src.arch.op.operator_base import BaseOperator, OperatorMetadata
 
 
 class TransferOperator(BaseOperator):
-    """数据传输算子基类"""
+    """Base class for data transfer operators"""
 
     def __init__(self, metadata: OperatorMetadata):
         super().__init__(metadata)
 
     def get_compute_complexity(self) -> float:
-        """传输算子没有计算复杂度"""
+        """Transfer operators have no compute complexity"""
         return 0.0
 
     def get_memory_requirement(self) -> Dict[str, int]:
-        """获取传输的数据量"""
+        """Get data volume for transfer"""
         io = self.metadata.io_config
         batch = self.metadata.batch_size
 

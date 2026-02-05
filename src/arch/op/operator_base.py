@@ -1,5 +1,5 @@
 """
-算子抽象层 - 提供通用的算子定义和接口
+Operator abstraction layer - Provides generic operator definitions and interfaces
 """
 
 from abc import ABC, abstractmethod
@@ -11,7 +11,7 @@ from hardware.hardware_config import HardwareConfig
 
 
 class DataType(Enum):
-    """数据类型"""
+    """Data type"""
 
     INT8 = 1
     FP8 = 1
@@ -23,7 +23,7 @@ class DataType(Enum):
 
 @dataclass
 class Tensor:
-    """张量定义"""
+    """Tensor definition"""
 
     m: int = 0
     n: int = 0
@@ -33,13 +33,13 @@ class Tensor:
         return (self.m, self.n)
 
     def size(self) -> int:
-        """计算张量元素数量"""
+        """Calculate number of tensor elements"""
         return self.m * self.n
 
 
 @dataclass
 class OperatorIO:
-    """算子输入输出定义"""
+    """Operator input/output definition"""
 
     input_shape: Tensor = field(default_factory=Tensor)
     output_shape: Tensor = field(default_factory=Tensor)
@@ -52,66 +52,66 @@ class OperatorIO:
 
 @dataclass
 class OperatorMetadata:
-    """算子元数据"""
+    """Operator metadata"""
 
     name: str = ""
-    op_type: str = ""  # 算子类型: matmul, conv, etc
+    op_type: str = ""  # Operator type: matmul, conv, etc
     description: str = ""
 
     io_config: OperatorIO = field(default_factory=OperatorIO)
 
-    # 执行参数
+    # Execution parameters
     batch_size: int = 1
     num_layers: int = 1
 
-    # 并行化参数
-    parallelization_dim: Optional[str] = None  # 并行维度标记
+    # Parallelization parameters
+    parallelization_dim: Optional[str] = None  # Parallel dimension marker
 
 
 class BaseOperator(ABC):
-    """基础算子抽象类"""
+    """Base operator abstract class"""
 
     def __init__(self, metadata: OperatorMetadata):
         """
-        初始化算子
+        Initialize operator
 
         Args:
-            metadata: 算子元数据
+            metadata: Operator metadata
         """
         self.metadata = metadata
 
     @abstractmethod
     def get_compute_complexity(self) -> float:
         """
-        获取计算复杂度 (FLOPs)
+        Get compute complexity (FLOPs)
 
         Returns:
-            FLOPs数量
+            Number of FLOPs
         """
         pass
 
     @abstractmethod
     def get_memory_requirement(self) -> Dict[str, int]:
         """
-        获取内存占用需求
+        Get memory requirements
 
         Returns:
-            内存占用需求字典 {
-                'input': 输入内存大小(字节),
-                'output': 输出内存大小(字节),
-                'weight': 权重内存大小(字节)
+            Memory requirements dictionary {
+                'input': input memory size (bytes),
+                'output': output memory size (bytes),
+                'weight': weight memory size (bytes)
             }
         """
         pass
 
     def get_io_volume(self) -> Dict[str, int]:
         """
-        获取访存 I/O 数据量
+        Get memory access I/O data volume
 
         Returns:
-            I/O 数据量字典 {
-                'load': 加载数据量(字节),
-                'store': 存储数据量(字节)
+            I/O data volume dictionary {
+                'load': load data volume (bytes),
+                'store': store data volume (bytes)
             }
         """
         io = self.metadata.io_config
@@ -137,15 +137,15 @@ class BaseOperator(ABC):
     @abstractmethod
     def get_weight_mem_occupy(self) -> float:
         """
-        获取权重内存占用
+        Get weight memory occupancy
 
         Args:
-            hardware: 硬件配置
+            hardware: Hardware configuration
 
         Returns:
-            权重内存占用
+            Weight memory occupancy
 
-        单位：
+        Unit:
             bytes
         """
         pass
