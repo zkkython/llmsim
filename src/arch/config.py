@@ -27,11 +27,12 @@ class ModelConfig:
             # 如果文件不存在的时候，尝试自动从huggingface下载文件
             # 使用方法：
             #  --model_path zai-org/GLM-4.7-Flash
-            config_path = huggingface_configs_loader.download_configs_from_hugging_face(config_path)
+            config_path = huggingface_configs_loader.download_configs_from_hugging_face(
+                config_path
+            )
         if not os.path.exists(config_path):
             # 进行二次确认，文件不存在再报个错
             raise RuntimeError(f"Model config not found: {config_path}")
-
 
         with open(config_path, "r") as f:
             data = json.load(f)
@@ -115,6 +116,7 @@ class Qwen3Config(ModelConfig):
                 setattr(config, key, value)
         return config
 
+
 @dataclass
 class Qwen3MoEConfig(Qwen3Config):
     """Qwen3 MoE configuration"""
@@ -135,7 +137,6 @@ class Qwen3MoEConfig(Qwen3Config):
             else:
                 setattr(config, key, value)
         return config
-
 
 
 @dataclass

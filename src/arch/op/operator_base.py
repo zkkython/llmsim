@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional
 
-from hardware.hardware_config import HardwareConfig
+from src.hardware.hardware_config import HardwareConfig
 
 
 class DataType(Enum):

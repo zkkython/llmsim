@@ -14,7 +14,9 @@ class Qwen3MoEArch(BaseModelArch):
         sc = self.schedule_config
 
         if not isinstance(mc, Qwen3MoEConfig):
-            raise ValueError(f"MoE architecture requires Qwen3MoEConfig, but got {type(mc)}")
+            raise ValueError(
+                f"MoE architecture requires Qwen3MoEConfig, but got {type(mc)}"
+            )
 
         # 1. Build attention layers (MHA, reuse SimpleTransformerArch logic)
         num_layers = mc.num_hidden_layers + (1 if sc.is_mtp else 0)
