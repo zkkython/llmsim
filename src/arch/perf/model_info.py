@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from arch.perf.model_perf import ModelPerformance
+from src.arch.perf.model_perf import ModelPerformance
 
 
 @dataclass

@@ -7,7 +7,7 @@ name = "llmsim"
 version = "0.1.0"
 description = "LLM 推理性能分析工具"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "zkkython"},
