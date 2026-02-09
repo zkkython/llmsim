@@ -3,8 +3,8 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict
 
+from src.arch.huggingface_configs import HuggingFaceConfigsLoader
 from src.arch.model_type import AttentionType, ForwardMode
-from src.llmsim.lib.configs import huggingface_configs_loader
 
 
 @dataclass
@@ -24,14 +24,13 @@ class ModelConfig:
     def from_json(config_path: str) -> "ModelConfig":
         """Load configuration from JSON file"""
         if not os.path.exists(config_path):
-            # 如果文件不存在的时候，尝试自动从huggingface下载文件
-            # 使用方法：
+            # when the file not exists, try to download from hugging-face
             #  --model_path zai-org/GLM-4.7-Flash
-            config_path = huggingface_configs_loader.download_configs_from_hugging_face(
+            config_path = HuggingFaceConfigsLoader.download_configs_from_hugging_face(
                 config_path
             )
         if not os.path.exists(config_path):
-            # 进行二次确认，文件不存在再报个错
+            # when the file still not exists, raise an error
             raise RuntimeError(f"Model config not found: {config_path}")
 
         with open(config_path, "r") as f:
