@@ -32,6 +32,9 @@ python3 src/main.py \
 
 # With Excel output
 python3 src/main.py ... --output_format excel --output_file result.xlsx
+
+# Config-driven auto adapter example (recommended)
+python3 examples/autogen_qwen.py
 ```
 
 ### Code Quality
@@ -66,6 +69,24 @@ main.py → ModelConfig.from_json() → create_model_arch() → PerformanceCalcu
 - `deepseek_v3_model_arch.py`: DeepSeek V3 with MLA + MoE
 - `qwen3_moe_model_arch.py`: Qwen3 MoE variant
 - `simple_model_arch.py`: Standard dense Transformer (used for Qwen3 dense models)
+
+**Config-driven Auto Adapter** (`src/arch/models_arch/auto/`)
+- `adapter.py`: High-level API `auto_adapter_from_config()` for building ModelArch from HF config
+- `config_builder.py`: Registry-based IR builders for each model type (qwen3_moe, deepseek_v3, qwen3)
+- `ir.py`: Intermediate Representation (IR) - ComputationalGraph, OpNode, ShapeSpec
+- `transformer.py`: Converts IR to LLMSim ModelArch
+
+Benefits of config-driven approach:
+- No SGLang model instantiation required
+- No mocking of distributed environment needed
+- Faster and more stable
+- Easy to extend for new model types via `@register_config_builder`
+
+Example usage:
+```python
+from src.arch.models_arch.auto import auto_adapter_from_config
+model_arch = auto_adapter_from_config(config, schedule_config)
+```
 
 **Operator Layer** (`src/arch/op/`)
 Each operator implements `BaseOperator` and provides:
@@ -129,6 +150,11 @@ src/
 │   ├── model_type.py          # Enums (AttentionType, ForwardMode, etc.)
 │   ├── perf_calculator.py     # Core performance calculation engine
 │   ├── models_arch/           # Model architecture implementations
+│   │   └── auto/              # Config-driven auto adapter
+│   │       ├── adapter.py     # auto_adapter_from_config() API
+│   │       ├── config_builder.py  # IR builders for each model type
+│   │       ├── ir.py          # IR data structures
+│   │       └── transformer.py # IR to ModelArch converter
 │   ├── op/                    # Operator implementations with FLOP calculations
 │   └── perf/                  # Performance data structures
 ├── hardware/                  # Hardware configuration

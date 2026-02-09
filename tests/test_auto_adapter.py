@@ -1,28 +1,13 @@
-"""Tests for the auto adapter module."""
+"""Tests for the IR layer and auto adapter module."""
 
 import pytest
 
-from src.arch.models_arch.auto import SglangAutoAdapter, register_layer_parser
 from src.arch.models_arch.auto.ir import (
     ComputationalGraph,
     DataType,
     OpNode,
     ShapeSpec,
 )
-from src.arch.models_arch.auto.layer_parsers.base import BaseLayerParser
-from src.arch.models_arch.auto.layer_parsers.registry import (
-    get_parser,
-    list_registered_parsers,
-    unregister_parser,
-)
-from src.arch.models_arch.auto.parser import (
-    HAS_TORCH,
-    ModelParser,
-    mock_sglang_environment,
-)
-
-# Skip tests that require PyTorch
-torch_required = pytest.mark.skipif(not HAS_TORCH, reason="PyTorch not installed")
 
 
 class TestShapeSpec:
@@ -249,143 +234,6 @@ class TestComputationalGraph:
         assert len(restored.nodes) == len(graph.nodes)
 
 
-class TestLayerParserRegistry:
-    """Tests for the layer parser registry."""
-
-    def test_list_registered_parsers(self):
-        parsers = list_registered_parsers()
-        assert isinstance(parsers, dict)
-        # Should have parsers registered from imports
-        assert len(parsers) > 0
-
-    def test_get_parser_existing(self):
-        parser = get_parser("RMSNorm")
-        assert parser is not None
-        assert type(parser).__name__ == "NormParser"
-
-    def test_get_parser_nonexistent(self):
-        parser = get_parser("NonExistentLayer")
-        assert parser is None
-
-    def test_unregister_parser(self):
-        # First register a test parser
-        @register_layer_parser("TestLayer")
-        class TestParser(BaseLayerParser):
-            @property
-            def layer_types(self):
-                return ["TestLayer"]
-
-            def parse(self, name, module, config):
-                return None
-
-        # Verify it was registered
-        assert get_parser("TestLayer") is not None
-
-        # Unregister it
-        result = unregister_parser("TestLayer")
-        assert result is True
-
-        # Verify it was removed
-        assert get_parser("TestLayer") is None
-
-    def test_unregister_nonexistent(self):
-        result = unregister_parser("DefinitelyNotReal")
-        assert result is False
-
-
-class TestMockEnvironment:
-    """Tests for the mock SGLang environment."""
-
-    def test_mock_environment_context(self):
-        import sys
-
-        # Ensure modules don't exist before
-        assert "sglang" not in sys.modules
-
-        with mock_sglang_environment():
-            assert "sglang" in sys.modules
-            assert "sgl_kernel" in sys.modules
-
-            # Test mock callable
-            import sglang
-
-            result = sglang.srt.distributed.parallel_model_parallel_is_initialized()
-            assert result is None
-
-        # After context exit, mocks should be removed
-        # Note: They might still be in sys.modules but with original values
-
-
-class TestModelParser:
-    """Tests for ModelParser class."""
-
-    @torch_required
-    def test_create_parser(self):
-        config = {"hidden_size": 4096, "num_attention_heads": 32}
-        parser = ModelParser(config)
-        assert parser.config == config
-
-    @torch_required
-    def test_infer_model_type_dense(self):
-        config = {"hidden_size": 4096}
-        parser = ModelParser(config)
-        assert parser._infer_model_type() == "dense"
-
-    @torch_required
-    def test_infer_model_type_moe(self):
-        config = {"hidden_size": 4096, "num_experts": 8}
-        parser = ModelParser(config)
-        assert parser._infer_model_type() == "moe"
-
-    @torch_required
-    def test_infer_model_type_mla(self):
-        config = {"hidden_size": 4096, "qk_rope_head_dim": 64, "kv_lora_rank": 512}
-        parser = ModelParser(config)
-        assert parser._infer_model_type() == "mla"
-
-    @torch_required
-    def test_has_moe_true(self):
-        config = {"num_experts": 8}
-        parser = ModelParser(config)
-        assert parser._has_moe() is True
-
-    @torch_required
-    def test_has_moe_false(self):
-        config = {"hidden_size": 4096}
-        parser = ModelParser(config)
-        assert parser._has_moe() is False
-
-    @torch_required
-    def test_has_mla_true(self):
-        config = {"qk_rope_head_dim": 64, "kv_lora_rank": 512}
-        parser = ModelParser(config)
-        assert parser._has_mla() is True
-
-    @torch_required
-    def test_has_mla_false(self):
-        config = {"hidden_size": 4096}
-        parser = ModelParser(config)
-        assert parser._has_mla() is False
-
-    @torch_required
-    def test_infer_kv_cache_type_mla(self):
-        config = {"qk_rope_head_dim": 64, "kv_lora_rank": 512}
-        parser = ModelParser(config)
-        assert parser._infer_kv_cache_type() == "mla"
-
-    @torch_required
-    def test_infer_kv_cache_type_gqa(self):
-        config = {"num_attention_heads": 32, "num_key_value_heads": 8}
-        parser = ModelParser(config)
-        assert parser._infer_kv_cache_type() == "gqa"
-
-    @torch_required
-    def test_infer_kv_cache_type_mha(self):
-        config = {"num_attention_heads": 32}
-        parser = ModelParser(config)
-        assert parser._infer_kv_cache_type() == "mha"
-
-
 class TestDataType:
     """Tests for DataType enum."""
 
@@ -409,29 +257,11 @@ class TestDataType:
         assert DataType.from_str("unknown") == DataType.BF16
 
 
-class TestSglangAutoAdapter:
-    """Tests for SglangAutoAdapter class."""
-
-    def test_create_adapter(self):
-        config = {"hidden_size": 4096}
-        adapter = SglangAutoAdapter(None, config)
-        assert adapter.model_class is None
-        assert adapter.config == config
-        assert adapter.ir_graph is None
-        assert adapter.model_arch is None
-
-    def test_get_ir_summary_not_parsed(self):
-        config = {"hidden_size": 4096}
-        adapter = SglangAutoAdapter(None, config)
-        summary = adapter.get_ir_summary()
-        assert "error" in summary
-
-
 class TestIntegration:
     """Integration tests."""
 
     def test_full_flow_simulation(self):
-        """Simulate the full adapter flow without actual SGLang models."""
+        """Simulate the full adapter flow."""
         # Create IR graph manually
         graph = ComputationalGraph(
             model_name="TestModel",
@@ -487,9 +317,7 @@ class TestIntegration:
         # Validate
         errors = graph.validate()
         # No attention core nodes, so should have validation error
-        assert (
-            len(errors) >= 0
-        )  # May or may not have errors depending on validation logic
+        assert len(errors) >= 0
 
 
 if __name__ == "__main__":
