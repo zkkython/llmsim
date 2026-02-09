@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from src.arch.huggingface_configs import HuggingFaceConfigsLoader
+from src.arch.configs_remote_loader import RemoteConfigsLoader
 from src.arch.model_type import AttentionType, ForwardMode
 
 
@@ -26,7 +26,10 @@ class ModelConfig:
         if not os.path.exists(config_path):
             # when the file not exists, try to download from hugging-face
             #  --model_path zai-org/GLM-4.7-Flash
-            config_path = HuggingFaceConfigsLoader.download_configs_from_hugging_face(
+            # and model_path is mandatory to download from which site, like:
+            #  --model_path huggingface.co/zai-org/GLM-4.7-Flash
+            #  --model_path modelscope.cn/zai-org/GLM-4.7-Flash
+            config_path = RemoteConfigsLoader.load_configs_from_remote(
                 config_path
             )
         if not os.path.exists(config_path):
