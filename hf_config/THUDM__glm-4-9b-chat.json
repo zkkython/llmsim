@@ -1,0 +1,63 @@
+{
+  "num_layers": 40,
+  "vocab_size": 151552,
+  "padded_vocab_size": 151552,
+  "hidden_size": 4096,
+  "ffn_hidden_size": 13696,
+  "kv_channels": 128,
+  "num_attention_heads": 32,
+  "seq_length": 131072,
+  "hidden_dropout": 0.0,
+  "classifier_dropout": null,
+  "attention_dropout": 0.0,
+  "layernorm_epsilon": 1.5625e-07,
+  "rmsnorm": true,
+  "apply_residual_connection_post_layernorm": false,
+  "post_layer_norm": true,
+  "add_bias_linear": false,
+  "add_qkv_bias": true,
+  "bias_dropout_fusion": true,
+  "multi_query_attention": true,
+  "multi_query_group_num": 2,
+  "rope_ratio": 500,
+  "apply_query_key_layer_scaling": true,
+  "attention_softmax_in_fp32": true,
+  "fp32_residual_connection": false,
+  "return_dict": true,
+  "output_hidden_states": false,
+  "dtype": "bfloat16",
+  "chunk_size_feed_forward": 0,
+  "is_encoder_decoder": false,
+  "architectures": [
+    "ChatGLMModel"
+  ],
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "problem_type": null,
+  "_name_or_path": "THUDM/glm-4-9b-chat",
+  "transformers_version": "5.1.0",
+  "model_type": "chatglm",
+  "auto_map": {
+    "AutoConfig": "configuration_chatglm.ChatGLMConfig",
+    "AutoModel": "modeling_chatglm.ChatGLMForConditionalGeneration",
+    "AutoModelForCausalLM": "modeling_chatglm.ChatGLMForConditionalGeneration",
+    "AutoModelForSeq2SeqLM": "modeling_chatglm.ChatGLMForConditionalGeneration",
+    "AutoModelForSequenceClassification": "modeling_chatglm.ChatGLMForSequenceClassification"
+  },
+  "num_hidden_layers": 40,
+  "original_rope": true,
+  "tie_word_embeddings": false,
+  "eos_token_id": [
+    151329,
+    151336,
+    151338
+  ],
+  "pad_token_id": 151329,
+  "output_attentions": false
+}

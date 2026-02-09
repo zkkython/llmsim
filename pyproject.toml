@@ -31,6 +31,7 @@ dependencies = [
     "huggingface-hub==1.4.0",
     "socksio==1.0.0",
     "httpx==0.28.1",
+    "modelscope==1.34.0",
 ]
 
 [project.optional-dependencies]

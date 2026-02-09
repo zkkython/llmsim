@@ -1,0 +1,53 @@
+{
+  "vocab_size": 32064,
+  "hidden_size": 3072,
+  "intermediate_size": 8192,
+  "num_hidden_layers": 32,
+  "num_attention_heads": 32,
+  "num_key_value_heads": 32,
+  "resid_pdrop": 0.0,
+  "embd_pdrop": 0.0,
+  "attention_dropout": 0.0,
+  "hidden_act": "silu",
+  "max_position_embeddings": 4096,
+  "original_max_position_embeddings": 4096,
+  "initializer_range": 0.02,
+  "rms_norm_eps": 1e-05,
+  "use_cache": true,
+  "rope_theta": 10000.0,
+  "rope_parameters": {
+    "rope_theta": 10000.0,
+    "rope_type": "default"
+  },
+  "sliding_window": 2047,
+  "return_dict": true,
+  "output_hidden_states": false,
+  "dtype": "bfloat16",
+  "chunk_size_feed_forward": 0,
+  "is_encoder_decoder": false,
+  "architectures": [
+    "Phi3ForCausalLM"
+  ],
+  "id2label": {
+    "0": "LABEL_0",
+    "1": "LABEL_1"
+  },
+  "label2id": {
+    "LABEL_0": 0,
+    "LABEL_1": 1
+  },
+  "problem_type": null,
+  "_name_or_path": "microsoft/Phi-3-mini-4k-instruct",
+  "transformers_version": "5.1.0",
+  "bos_token_id": 1,
+  "eos_token_id": 32000,
+  "pad_token_id": 32000,
+  "tie_word_embeddings": false,
+  "auto_map": {
+    "AutoConfig": "configuration_phi3.Phi3Config",
+    "AutoModelForCausalLM": "modeling_phi3.Phi3ForCausalLM"
+  },
+  "model_type": "phi3",
+  "attention_bias": false,
+  "output_attentions": false
+}
