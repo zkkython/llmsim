@@ -1,7 +1,7 @@
 from typing import Dict
 
-from hardware.hardware_config import HardwareConfig
 from src.arch.op.operator_base import BaseOperator, DataType, OperatorMetadata
+from src.hardware.hardware_config import HardwareConfig
 
 
 class MLAAttentionOperator(BaseOperator):

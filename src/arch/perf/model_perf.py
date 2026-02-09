@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from arch.config import ScheduleConfig
+from src.arch.config import ScheduleConfig
 from src.arch.model_type import ForwardMode
 from src.arch.perf.layer_perf import LayerPerformance
 

@@ -1,7 +1,7 @@
 from typing import Dict
 
-from hardware.hardware_config import HardwareConfig
 from src.arch.op.operator_base import BaseOperator, OperatorMetadata
+from src.hardware.hardware_config import HardwareConfig
 
 
 class TransferOperator(BaseOperator):

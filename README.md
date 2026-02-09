@@ -260,6 +260,120 @@ python3 src/main.py \
 
 ---
 
+## Parameter Optimization
+
+LLMSim now includes an **automatic parameter optimization module** that searches for the best TP (Tensor Parallel), DP (Data Parallel), EP (Expert Parallel), and batch size configurations to optimize TTFT (Time To First Token) and TPS (Tokens Per Second).
+
+### Quick Start with Optimization
+
+#### 1. Quick Recommendation Mode
+
+Get recommended configuration based on priority (latency/throughput/balanced):
+
+```bash
+# Optimize for throughput
+python -m src.optimization.cli \
+    --model_path hf_config/qwen3-32B_config.json \
+    --hardware h800 \
+    --max_seqlen 4096 \
+    --recommend throughput
+
+# Optimize for low latency
+python -m src.optimization.cli \
+    --model_path hf_config/deepseek_671b_r1_config.json \
+    --hardware klx_p800 \
+    --max_seqlen 4096 \
+    --recommend latency
+
+# Balanced optimization
+python -m src.optimization.cli \
+    --model_path hf_config/qwen3-32B_config.json \
+    --hardware h800 \
+    --max_seqlen 4096 \
+    --recommend balanced
+```
+
+#### 2. Full Grid Search Optimization
+
+Search across custom parameter ranges:
+
+```bash
+python -m src.optimization.cli \
+    --model_path hf_config/qwen3-32B_config.json \
+    --hardware h800 \
+    --max_seqlen 4096 \
+    --tp_range "1,2,4,8" \
+    --dp_range "1,2,4,8" \
+    --batch_range "1-128" \
+    --objective maximize_tps \
+    --output optimization_result.json
+```
+
+#### 3. Optimization with World Size Constraint
+
+When total GPU count is fixed (constrains TP * DP):
+
+```bash
+python -m src.optimization.cli \
+    --model_path hf_config/deepseek_671b_r1_config.json \
+    --hardware klx_p800 \
+    --max_seqlen 4096 \
+    --tp_range "1,2,4,8" \
+    --dp_range "1,2,4,8" \
+    --ep_range "1,2,4,8,16" \
+    --batch_range "1-32" \
+    --world_size 16 \
+    --objective maximize_tps
+```
+
+### Optimization CLI Arguments
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `--model_path` | string | **Required** | Path to model configuration file |
+| `--hardware` | string | h800 | Hardware preset: `h20`, `h800`, `gb200`, `klx_p800` |
+| `--max_seqlen` | int | **Required** | Maximum sequence length (fixed parameter) |
+| `--mode` | string | extend | Forward mode: `extend` (Prefill) / `decode` |
+| `--tp_range` | string | "1,2,4,8" | Tensor Parallel range (e.g., "1,2,4,8" or "1-8") |
+| `--dp_range` | string | "1,2,4,8" | Data Parallel range |
+| `--ep_range` | string | Auto | Expert Parallel range (auto-detected for MoE) |
+| `--batch_range` | string | "1-128" | Batch size range |
+| `--world_size` | int | None | Total GPU count (constrains TP * DP) |
+| `--objective` | string | maximize_tps | Optimization goal: `minimize_ttft`, `maximize_tps`, `balanced` |
+| `--optimizer` | string | grid_search | Search algorithm (currently only grid_search) |
+| `--max_evaluations` | int | None | Limit number of evaluations |
+| `--recommend` | string | None | Quick mode: `latency`, `throughput`, `balanced` |
+| `--output` | string | None | Output file path (JSON format) |
+| `--verbose` | flag | False | Verbose output |
+
+### Output Example
+
+```
+============================================================
+OPTIMIZATION RESULTS
+============================================================
+
+Best Configuration:
+  Tensor Parallel (TP): 8
+  Data Parallel (DP): 1
+  Expert Parallel (EP): 1
+  Batch Size: 128
+  Mode: EXTEND
+
+Performance Metrics:
+  ttft_ms: 107.47
+  throughput_tps: 4878268.83
+  throughput_per_gpu: 609783.60
+  total_time_ms: 3624.74
+
+Optimization Statistics:
+  Total evaluations: 80
+  Search space size: 80
+  Total time: 0.05s
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -275,13 +389,30 @@ llmsim/
 │   │   └── perf/               # Performance models
 │   ├── hardware/               # Hardware modeling
 │   │   └── hardware_config.py
+│   ├── optimization/           # Parameter optimization module
+│   │   ├── cli.py              # Optimization CLI
+│   │   ├── service.py          # Optimization service
+│   │   ├── search_space.py     # Search space definition
+│   │   ├── objective.py        # Objective functions
+│   │   ├── evaluator.py        # Performance evaluator
+│   │   ├── constraints.py      # Constraint validation
+│   │   ├── config.py           # Search space config
+│   │   ├── results.py          # Result data structures
+│   │   └── optimizers/         # Optimization algorithms
+│   │       ├── base.py
+│   │       └── grid_search.py
 │   └── visual/                 # Output reports
 │       ├── console_report.py
 │       └── excel_report.py
 ├── hf_config/                  # Pre-configured model configs
 ├── hardware_config/            # Pre-configured hardware configs
 ├── pyproject.toml              # Project configuration
-└── README.md                   # This document
+├── README.md                   # This document
+├── ds_prefill.sh               # DeepSeek prefill examples
+├── ds_decode.sh                # DeepSeek decode examples
+├── optimize_ds_prefill.sh      # DeepSeek prefill optimization
+├── optimize_ds_decode.sh       # DeepSeek decode optimization
+└── optimize_qwen3.sh           # Qwen3 optimization examples
 ```
 
 ---

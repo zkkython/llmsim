@@ -7,7 +7,7 @@ name = "llmsim"
 version = "0.1.0"
 description = "LLM 推理性能分析工具"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "zkkython"},
@@ -28,6 +28,9 @@ dependencies = [
     "pytest",
     "json5",
     "openpyxl",
+    "huggingface-hub==1.4.0",
+    "socksio==1.0.0",
+    "httpx==0.28.1",
 ]
 
 [project.optional-dependencies]
